@@ -18,12 +18,12 @@ type LngLat struct {
 	Lng, Lat float64
 }
 
-//LngLat bounding box of a tile, in decimal degrees
+//LngLatBbox bounding box of a tile, in decimal degrees
 type LngLatBbox struct {
 	West, South, East, North float64
 }
 
-//Spherical Mercator bounding box of a tile
+//Bbox holds Spherical Mercator bounding box of a tile
 type Bbox struct {
 	Left, Bottom, Right, Top float64
 }
@@ -43,10 +43,10 @@ func rad2deg(rad float64) float64 {
 //GetTile returns a tile for a given longitude latitude and zoom level
 func GetTile(lng float64, lat float64, zoom int) *Tile {
 
-	lat_rad := deg2rad(lat)
+	latRad := deg2rad(lat)
 	n := math.Pow(2.0, float64(zoom))
 	x := int(math.Floor((lng + oneEighty) / threeSixty * n))
-	y := int(math.Floor((1.0 - math.Log(math.Tan(lat_rad)+(1.0/math.Cos(lat_rad)))/math.Pi) / 2.0 * n))
+	y := int(math.Floor((1.0 - math.Log(math.Tan(latRad)+(1.0/math.Cos(latRad)))/math.Pi) / 2.0 * n))
 
 	return &Tile{x, y, zoom}
 
