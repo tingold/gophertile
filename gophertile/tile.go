@@ -8,14 +8,17 @@ const threeSixty float64 = 360.0
 const oneEighty float64 = 180.0
 const radius float64 = 6378137.0
 
+//Tile struct is the main object we deal with, represents a standard X/Y/Z tile
 type Tile struct {
 	X, Y, Z int
 }
+
+//LngLat holds a standard geographic coordinate pair in decimal degrees
 type LngLat struct {
 	Lng, Lat float64
 }
 
-//LngLat bounding box of a tile
+//LngLat bounding box of a tile, in decimal degrees
 type LngLatBbox struct {
 	West, South, East, North float64
 }
@@ -24,6 +27,8 @@ type LngLatBbox struct {
 type Bbox struct {
 	Left, Bottom, Right, Top float64
 }
+
+//XY holds a Spherical Mercator point
 type XY struct {
 	X, Y float64
 }
@@ -35,6 +40,7 @@ func rad2deg(rad float64) float64 {
 	return rad * (oneEighty / math.Pi)
 }
 
+//GetTile returns a tile for a given longitude latitude and zoom level
 func GetTile(lng float64, lat float64, zoom int) *Tile {
 
 	lat_rad := deg2rad(lat)
@@ -46,6 +52,7 @@ func GetTile(lng float64, lat float64, zoom int) *Tile {
 
 }
 
+//Equals compares 2 tiles
 func (tile *Tile) Equals(t2 *Tile) bool {
 
 	return tile.X == t2.X && tile.Y == t2.Y && tile.Z == t2.Z
@@ -56,13 +63,14 @@ func (tile *Tile) Equals(t2 *Tile) bool {
 func (tile *Tile) Ul() *LngLat {
 
 	n := math.Pow(2.0, float64(tile.Z))
-	lon_deg := float64(tile.X)/n*threeSixty - oneEighty
-	lat_rad := math.Atan(math.Sinh(math.Pi * float64(1-(2*float64(tile.Y)/n))))
-	lat_deg := rad2deg(lat_rad)
+	lonDeg := float64(tile.X)/n*threeSixty - oneEighty
+	latRad := math.Atan(math.Sinh(math.Pi * float64(1-(2*float64(tile.Y)/n))))
+	latDeg := rad2deg(latRad)
 
-	return &LngLat{lon_deg, lat_deg}
+	return &LngLat{lonDeg, latDeg}
 }
 
+//Bounds returns a LngLatBbox for a given tile
 func (tile *Tile) Bounds() *LngLatBbox {
 	a := tile.Ul()
 	shifted := Tile{tile.X + 1, tile.Y + 1, tile.Z}
@@ -70,6 +78,7 @@ func (tile *Tile) Bounds() *LngLatBbox {
 	return &LngLatBbox{a.Lng, b.Lat, b.Lng, a.Lat}
 }
 
+//Parent returns the tile above (i.e. at a lower zoon number) the given tile
 func (tile *Tile) Parent() *Tile {
 
 	if tile.Z == 0 && tile.X == 0 && tile.Y == 0 {
@@ -91,18 +100,19 @@ func (tile *Tile) Parent() *Tile {
 	return nil
 }
 
+//Children returns the 4 tiles below (i.e. at a higher zoom number) the given tile
 func (tile *Tile) Children() []*Tile {
 
 	kids := []*Tile{
-		&Tile{tile.X * 2, tile.Y * 2, tile.Z + 1},
-		&Tile{tile.X*2 + 1, tile.Y * 2, tile.Z + 1},
-		&Tile{tile.X*2 + 1, tile.Y*2 + 1, tile.Z + 1},
-		&Tile{tile.X * 2, tile.Y*2 + 1, tile.Z + 1},
+		{tile.X * 2, tile.Y * 2, tile.Z + 1},
+		{tile.X*2 + 1, tile.Y * 2, tile.Z + 1},
+		{tile.X*2 + 1, tile.Y*2 + 1, tile.Z + 1},
+		{tile.X * 2, tile.Y*2 + 1, tile.Z + 1},
 	}
 	return kids
 }
 
-//XY transforms WGS84 DD to Spherical Mercator meters
+//ToXY transforms WGS84 DD to Spherical Mercator meters
 func ToXY(ll *LngLat) *XY {
 
 	x := radius * deg2rad(ll.Lng)
